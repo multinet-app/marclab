@@ -85,15 +85,21 @@ def get_data(network: str, data_type: str) -> List[Any]:
 
 
 def main():
-    structures = cast(List[Structure], get_data("RPC1", "Structures"))
+    # Grab the network name from the command line.
+    if len(sys.argv) < 2:
+        print("usage: marclab.py <network-name>", file=sys.stderr)
+        return 1
+    network = sys.argv[1]
+
+    structures = cast(List[Structure], get_data(network, "Structures"))
     with open("structures.json", "w") as f:
         f.write(json.dumps(structures))
 
-    structure_spatial_caches = cast(List[StructureSpatialCache], get_data("RPC1", "StructureSpatialCaches"))
+    structure_spatial_caches = cast(List[StructureSpatialCache], get_data(network, "StructureSpatialCaches"))
     with open("structure_spatial_caches.json", "w") as f:
         f.write(json.dumps(structure_spatial_caches))
 
-    structure_links = cast(List[StructureLink], get_data("RPC1", "StructureLinks"))
+    structure_links = cast(List[StructureLink], get_data(network, "StructureLinks"))
     with open("structure_links.json", "w") as f:
         f.write(json.dumps(structure_links))
 
