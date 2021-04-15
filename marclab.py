@@ -1,7 +1,54 @@
 import json
 import requests
 import sys
-from typing import Any, List
+from typing import Any, List, TypedDict, Optional, cast
+
+
+class Structure(TypedDict):
+    ID: int
+    TypeID: int
+    Notes: str
+    Verified: bool
+    Tags: str
+    Confidence: float
+    Version: str
+    ParentID: Optional[int]
+    Created: str
+    Label: str
+    Username: str
+    LastModified: str
+
+
+class Geometry(TypedDict):
+    CoordinateSystemId: int
+    WellKnownText: str
+    WellKnownBinary: None
+
+
+class GeometryDict(TypedDict):
+    geometry: Geometry
+
+
+class StructureSpatialCache(TypedDict):
+    ID: int
+    Area: float
+    Volume: float
+    MaxDimension: int
+    MinZ: int
+    MaxZ: int
+    LastModified: str
+    BoundingRect: GeometryDict
+    ConvexHull: GeometryDict
+
+
+class StructureLink(TypedDict):
+    SourceID: int
+    TargetID: int
+    Bidirectional: bool
+    Tags: None
+    Username: str
+    Created: str
+    LastModified: str
 
 
 def base_url(network: str) -> str:
@@ -38,15 +85,15 @@ def get_data(network: str, data_type: str) -> List[Any]:
 
 
 def main():
-    structures = get_data("RPC1", "Structures")
+    structures = cast(List[Structure], get_data("RPC1", "Structures"))
     with open("structures.json", "w") as f:
         f.write(json.dumps(structures))
 
-    structure_spatial_caches = get_data("RPC1", "StructureSpatialCaches")
+    structure_spatial_caches = cast(List[StructureSpatialCache], get_data("RPC1", "StructureSpatialCaches"))
     with open("structure_spatial_caches.json", "w") as f:
         f.write(json.dumps(structure_spatial_caches))
 
-    structure_links = get_data("RPC1", "StructureLinks")
+    structure_links = cast(List[StructureLink], get_data("RPC1", "StructureLinks"))
     with open("structure_links.json", "w") as f:
         f.write(json.dumps(structure_links))
 
