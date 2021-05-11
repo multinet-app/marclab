@@ -51,6 +51,22 @@ class StructureLink(TypedDict):
     Created: str
     LastModified: str
 
+class StructureTypes(TypedDict):
+    ID: int
+    ParentID: Optional[int]
+    Name: str
+    Notes: str
+    MarkupType: str
+    Tags: None
+    StructureTags: str
+    Abstract: bool
+    Color: int
+    Version: str
+    Code: str
+    HotKey: str
+    Username: str
+    LastModified: str
+    Created: str
 
 def base_url(network: str) -> str:
     if not network:
@@ -103,6 +119,10 @@ def main():
     structure_links = cast(List[StructureLink], get_data(network, "StructureLinks"))
     with open("structure_links.json", "w") as f:
         f.write(json.dumps(structure_links))
+    
+    structure_types = cast(List[StructureTypes], get_data(network, "StructureTypes"))
+    with open("structure_type.json", "w") as f:
+        f.write(json.dumps(structure_types))
 
     # TODO: cool stuff with this data, including turning it into Multinet
     # tables, etc.
