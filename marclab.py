@@ -2,6 +2,7 @@ import json
 import requests
 import sys
 import csv
+import pandas as pd
 from typing import Any, List, TypedDict, Optional, cast
 
 
@@ -127,58 +128,91 @@ def main():
     # TODO: cool stuff with this data, including turning it into Multinet
     # tables, etc.
 
+    # Create dict of structure types (cells and synapses)
+    type_id_dict = {}
+    for structure in structure_types:
+        type_id_dict[structure['ID']] = structure['Name'].strip()
+
+
+    # Combine structure information across structures and structure_spatial_caches
+    # Separate into nodes (typeID = 1) and edges (typeID != 1)
+
     # function for making ID value a key
     def swap_key(dictionary, new_dict):
         for line in dictionary:
-            for key, value in line.items():
-                if (key == 'ID'):
-                    if (new_dict.get(value)):
-                        new_dict[value].append(line)
-                    else:
-                        new_dict[value] = []
-                        new_dict[value].append(line)
+            # Add the Type Label
+            line['TypeLabel'] = type_id_dict[line['TypeID']]
+            # Add blank keys from Structural Cache
+            # This will account for dif in sizes
+            for key in structure_spatial_caches[0].keys():
+                if key == 'Area':
+                    line['Area (nm^2)'] = line.get(key, 'undefined')
+                elif key == 'Volume':
+                    line['Volume (nm^3)'] = line.get(key, 'undefined')
+                else:
+                    line[key] = line.get(key, 'undefined')
+            new_dict[line['ID']] = line
         return new_dict
 
-    # Create dictionary with ParentID values as keys
+
+    # Create dictionary with ID values as keys
     structures_dict = {}
-    structure_spatial_caches_dict = {}
-
     swap_key(structures, structures_dict)
-    swap_key(structure_spatial_caches, structure_spatial_caches_dict)
 
-    # Type dict for TypeID
-    type_dict = {1: 'Cell', 3: 'Vessel', 28: 'Gap Junction', 31: 'Bipolar', 34: 'Conventional', 35: 'Postsynapse', 73: 'Ribbon Synapse', 80: 'Test', 81: 'Organized SER', 85: 'Adherens', 181: 'Cistern Pre', 182: 'Cistern Post', 183: 'Cilium', 189: 'BC Conventional Synapse', 219: 'Multi Plaque-like', 220: 'Endocytosis', 224: 'INL-IPL Boundary', 225: 'multivesicular body', 226: 'Ribosome patch', 227: 'Ribbon cluster', 229: 'Touch', 230: 'Loop', 232: 'Polysomes', 233: 'Depth', 234: 'Marker', 235: 'IPL-GCL Boundary', 236: 'Plaque', 237: 'axon', 240: 'Plaque-like Pre', 241: 'Plaque-like Post', 243: 'Neuroglial adherens', 244: 'Unknown', 245: 'Nucleolus', 246: 'Mitochondria', 247: 'Caveola', 248: 'Nuclear filament', 249: 'Golgi Plaque', 250: 'Golgi Normal', 252: 'Lysosome', 253: 'Annular Gap Junction', 254: 'Vessel Adjacency', 255: 'Rootlet', 256: 'CH Boundary', 257: 'Distal Junction', 258: 'Flat Contact', 259: 'Bubbles/Swirls', 260: 'Peri GJ Adherens', 261: 'Caveola String', 262: 'Coated Pits', 263: 'GJ Endo', 264: 'Dense Core Vesicle'}
+    # Add structure spatial cache to structures dict
+    for structure in structure_spatial_caches:
+        structure_copy = structure
+        structure_copy['Area (nm^2)'] = structure_copy['Area']
+        del structure_copy['Area']
+        structure_copy['Volume (nm^3)'] = structure_copy['Volume']
+        del structure_copy['Volume']
+        structures_dict[structure_copy['ID']] = {**structures_dict[structure_copy['ID']], **structure_copy}
 
-    # Create links
+    # Separate the nodes (cells, Type ID == 1) from the edges (synapses, , Type ID != 1)
+    # Remove attributes that don't make sense for structure type
+    nodes = []
+    edges_dict = {}
+
+    for item, value in structures_dict.items():
+        if value['TypeID'] == 1:
+            value_copy = value
+            del value_copy['Area (nm^2)']
+            nodes.append(value_copy)
+        else:
+            # Create edges dictionary with ID as key
+            value_copy = value
+            del value_copy['Volume (nm^3)']
+            edges_dict[value_copy['ID']] = value_copy
+
+    edges_parent_list = []
+    # Link edges based on ParentID associated with the SourceID and TargetID
+    for links in structure_links:
+        if (edges_dict.get(links['SourceID']) and edges_dict.get(links['TargetID'])):
+            links['_from'] = edges_dict[links['SourceID']]['ParentID']
+            links['_to'] = edges_dict[links['TargetID']]['ParentID']
+            for source_key, source_value in edges_dict[links['SourceID']].items():
+                links['_from'+source_key] = source_value
+            for target_key, target_value in edges_dict[links['TargetID']].items():
+                links['_to'+target_key] = target_value
+            edges_parent_list.append(links)
+
+    # Group by source and target
+    df = pd.DataFrame(edges_parent_list)
+    links_df = df.groupby(['_to', '_from', '_fromTypeLabel', '_toTypeLabel']).groups
+
     links = []
-    i=1
-    for line in structure_links:
-        temp_dict = {}
-        temp_dict['ID'] = i
-        for key, value in line.items():
-            if (key == 'SourceID'):
-                temp_dict['SourceStructureID'] = structures_dict[value][0]['ParentID']
-                temp_dict['TypeSource'] = type_dict[structures_dict[value][0]['TypeID']]
-            if (key == 'TargetID'):
-                temp_dict['TargetStructureID'] = structures_dict[value][0]['ParentID']
-                temp_dict['TypeTarget'] = type_dict[structures_dict[value][0]['TypeID']]
-            if (key == "Bidirectional"):
-                temp_dict[key] = value
-            if (key == "LastModified"):
-                temp_dict[key] = value
-        # Something is not working here
-        # temp_dict["SourceArea"] = structure_spatial_caches_dict[temp_dict['SourceStructureID']][0]["Area"]
-        # temp_dict["SourceMinZ"] = structure_spatial_caches_dict[temp_dict['SourceStructureID']][0]["MinZ"]
-        # temp_dict["TargetArea"] = structure_spatial_caches_dict[temp_dict['TargetStructureID']][0]["Area"]
-        # temp_dict["TargetMinZ"] = structure_spatial_caches_dict[temp_dict['TargetStructureID']][0]["MinZ"]
-        # temp_dict["Label"] = temp_dict["SourceStructureID"]+"-"+temp_dict['TargetStructureID']+" via " + temp_dict['TypeSource']+" from " + line['SourceID'] + " -> " + line['TargetID']
-        temp_dict["Links"] = [{
-            "SourceID": line['SourceID'],
-            "TargetID": line['TargetID'],
-            "Directional": line['Bidirectional']
-        }]
-        links.append(temp_dict)
-        i += 1
+    for row_index in links_df.values():
+        # Construct label: _to-_from via '_fromTypeLabel' from 'SourceID' -> 'TargetID'
+        # Keep track of number of children
+        path = {'Label': '', 'Total Children': 0}
+        for i in row_index:
+            path = {**path, **df.loc[i, ['_to', '_from', '_fromTypeLabel', '_toTypeLabel', 'LastModified', 'Bidirectional']]}
+            if path['Label'] == '':
+                path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_to'],path['_from'],path['_fromTypeLabel'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+            else:
+                path['Label'] += ', {} -> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+            path['Total Children'] += 1
+        links.append(path)
 
     # Create links file
     link_keys = links[0].keys()
@@ -186,16 +220,6 @@ def main():
         dict_writer = csv.DictWriter(f, link_keys)
         dict_writer.writeheader()
         dict_writer.writerows(links)
-
-
-    # Create nodes
-    nodes = []
-    for line in structures:
-        temp_dict = {}
-        for key,value in line.items():
-            if (key != 'Notes' or 'Tags' or 'Version' or 'ParentID' or 'Username'):
-                temp_dict[key] = value
-        nodes.append(temp_dict)
 
     # Create nodes file
     node_keys = nodes[0].keys()
