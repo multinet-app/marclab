@@ -175,7 +175,7 @@ def main():
     nodes = []
     edges_dict = {}
 
-    for item, value in structures_dict.items():
+    for value in structures_dict.values():
         if value['TypeID'] == 1:
             value_copy = value
             del value_copy['Area (nm^2)']
@@ -193,7 +193,7 @@ def main():
     edges_parent_list = []
     # Link edges based on ParentID associated with the SourceID and TargetID
     for links in structure_links:
-        if (edges_dict.get(links['SourceID']) and edges_dict.get(links['TargetID'])):
+        if edges_dict.get(links['SourceID']) and edges_dict.get(links['TargetID']):
             links['_from'] = edges_dict[links['SourceID']]['ParentID']
             links['_to'] = edges_dict[links['TargetID']]['ParentID']
             for source_key, source_value in edges_dict[links['SourceID']].items():
