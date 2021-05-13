@@ -225,9 +225,16 @@ def main():
                 edgeType = df.loc[i, '_fromTypeLabel']
             path = {**path, **df.loc[i, ['_from', '_to', 'LastModified', 'Bidirectional']], 'Type': edgeType}
             if path['Label'] == '':
-                path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+                # Account for bidirectional
+                if path['Bidirectional'] == 'TRUE':
+                    path['Label'] = '{}-{} via {} from {} <-> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+                else:
+                    path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
             else:
-                path['Label'] += ', {} -> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+                if path['Bidirectional'] == 'TRUE':
+                    path['Label'] += ', {} <-> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+                else:
+                    path['Label'] += ', {} -> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
             path['TotalChildren'] += 1
             # Add source and target area to path
             if df.loc[i, '_fromArea (nm^2)'] != 'undefined':
