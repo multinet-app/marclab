@@ -226,12 +226,12 @@ def main():
             path = {**path, **df.loc[i, ['_from', '_to', 'LastModified', 'Bidirectional']], 'Type': edgeType}
             if path['Label'] == '':
                 # Account for bidirectional
-                if path['Bidirectional'] == 'TRUE':
+                if path['Bidirectional']:
                     path['Label'] = '{}-{} via {} from {} <-> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
                 else:
                     path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
             else:
-                if path['Bidirectional'] == 'TRUE':
+                if path['Bidirectional']:
                     path['Label'] += ', {} <-> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
                 else:
                     path['Label'] += ', {} -> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
