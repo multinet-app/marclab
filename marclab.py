@@ -181,6 +181,10 @@ def main():
             del value_copy['Area (nm^2)']
             nodes.append(value_copy)
         else:
+            # Catch if children not assigned parent
+            if not (value['ParentID']):
+                noParentIssue = {'Type': 'Parentless child', 'Location': 'Child ID: {}'.format(value['ID'])}
+                issues.append(noParentIssue)
             # Create edges dictionary with ID as key
             value_copy = value
             del value_copy['Volume (nm^3)']
