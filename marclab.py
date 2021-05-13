@@ -225,6 +225,25 @@ def main():
             else:
                 path['Label'] += ', {} -> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
             path['TotalChildren'] += 1
+            # Add source and target area to path
+            if df.loc[i, '_fromArea (nm^2)'] != 'undefined':
+                path['TotalSourceArea(nm^2)'] = float(df.loc[i, '_fromArea (nm^2)'])
+            else:
+                # Catch if there is no area
+                areaIssue = {'Type': 'Area undefined','Location': 'Child ID: {}'.format(df.loc[i, 'SourceID'])}
+                path['TotalSourceArea(nm^2)'] = 0
+                issues.append(areaIssue)
+            if df.loc[i, '_toArea (nm^2)'] != 'undefined':
+                path['TotalTargetArea(nm^2)'] = float(df.loc[i, '_toArea (nm^2)'])
+            else:
+                # Catch if there is no area
+                areaIssue = {'Type': 'Area undefined','Location': 'Child ID: {}'.format(df.loc[i, 'TargetID'])}
+                path['TotalTargetArea(nm^2)'] = 0
+                issues.append(areaIssue)
+            if round(path['TotalSourceArea(nm^2)']) != round(path['TotalTargetArea(nm^2)']):
+                # Catch if areas are not similar
+                areaIssue = {'Type': 'Areas not similar','Location': 'SourceID: {}, SourceArea: {} -- TargetID: {}, TargetArea: {}'.format(df.loc[i, 'SourceID'], path['TotalSourceArea(nm^2)'], df.loc[i, 'TargetID'],path['TotalTargetArea(nm^2)'])}
+                issues.append(areaIssue)
         links.append(path)
 
     # Create links file
