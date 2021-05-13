@@ -127,6 +127,8 @@ def main():
 
     # TODO: cool stuff with this data, including turning it into Multinet
     # tables, etc.
+    # List for tracking potential data issues
+    issues = []
 
     # Create dict of structure types (cells and synapses)
     type_id_dict = {}
@@ -204,14 +206,25 @@ def main():
     for row_index in links_df.values():
         # Construct label: _to-_from via '_fromTypeLabel' from 'SourceID' -> 'TargetID'
         # Keep track of number of children
-        path = {'Label': '', 'Total Children': 0}
+        path = {'Label': '', 'TotalChildren': 0}
         for i in row_index:
-            path = {**path, **df.loc[i, ['_to', '_from', '_fromTypeLabel', '_toTypeLabel', 'LastModified', 'Bidirectional']]}
+            # Determine label for for synapse
+            edgeType = ''
+            if 'Pre' in df.loc[i, '_fromTypeLabel']:
+                edgeType = df.loc[i, '_fromTypeLabel'].replace('Pre', '')
+            elif 'Post' in df.loc[i, '_fromTypeLabel']:
+                # Catch if a source label includes "Post"
+                labelIssue = {'Type': 'Pre/Post Label','Location': 'SourceID: {}, labeled: {}'.format(df.loc[i, 'SourceID'],df.loc[i, '_fromTypeLabel'])}
+                issues.append(labelIssue)
+                edgeType = df.loc[i, '_fromTypeLabel']
+            else:
+                edgeType = df.loc[i, '_fromTypeLabel']
+            path = {**path, **df.loc[i, ['_from', '_to', 'LastModified', 'Bidirectional']], 'Type': edgeType}
             if path['Label'] == '':
-                path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_to'],path['_from'],path['_fromTypeLabel'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+                path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
             else:
                 path['Label'] += ', {} -> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
-            path['Total Children'] += 1
+            path['TotalChildren'] += 1
         links.append(path)
 
     # Create links file
