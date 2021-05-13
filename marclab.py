@@ -240,6 +240,13 @@ def main():
         dict_writer = csv.DictWriter(f, node_keys)
         dict_writer.writeheader()
         dict_writer.writerows(nodes)
+    
+    # Create issues files
+    issue_keys = issues[0].keys()
+    with open('issues.csv', 'w', newline='') as f:
+        dict_writer = csv.DictWriter(f, issue_keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(issues)
 
     return 0
 
