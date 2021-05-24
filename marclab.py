@@ -181,10 +181,15 @@ def main():
             del value_copy['Area (nm^2)']
             nodes.append(value_copy)
         else:
-            # Catch if children not assigned parent
-            if not (value['ParentID']):
-                noParentIssue = {'Type': 'Parentless child', 'Location': 'Child ID: {}'.format(value['ID'])}
-                issues.append(noParentIssue)
+            if value['ParentID'] != 1:
+                # Catch if children not assigned parent
+                if not value['ParentID']:
+                    noParentIssue = {'Type': 'Parentless child', 'Info': value}
+                    issues.append(noParentIssue)
+                # Catch if children are assigned another child as a parent
+                else:
+                    childAsParentIssues = {'Type': 'Child as parent', 'Info': value}
+                    issues.append(childAsParentIssues)
             # Create edges dictionary with ID as key
             value_copy = value
             del value_copy['Volume (nm^3)']
@@ -197,9 +202,9 @@ def main():
             links['_from'] = edges_dict[links['SourceID']]['ParentID']
             links['_to'] = edges_dict[links['TargetID']]['ParentID']
             for source_key, source_value in edges_dict[links['SourceID']].items():
-                links['_from'+source_key] = source_value
+                links['_from' + source_key] = source_value
             for target_key, target_value in edges_dict[links['TargetID']].items():
-                links['_to'+target_key] = target_value
+                links['_to' + target_key] = target_value
             edges_parent_list.append(links)
 
     # Group by source and target
@@ -218,7 +223,9 @@ def main():
                 edgeType = df.loc[i, '_fromTypeLabel'].replace('Pre', '')
             elif 'Post' in df.loc[i, '_fromTypeLabel']:
                 # Catch if a source label includes "Post"
-                labelIssue = {'Type': 'Pre/Post Label','Location': 'SourceID: {}, labeled: {}'.format(df.loc[i, 'SourceID'],df.loc[i, '_fromTypeLabel'])}
+                labelIssue = {'Type': 'Pre/Post Label',
+                            'Info': 'SourceID: {}, labeled: {}'.format(df.loc[i, 'SourceID'],
+                                                                            df.loc[i, '_fromTypeLabel'])}
                 issues.append(labelIssue)
                 edgeType = df.loc[i, '_fromTypeLabel']
             else:
@@ -227,9 +234,11 @@ def main():
             if path['Label'] == '':
                 # Account for bidirectional
                 if path['Bidirectional']:
-                    path['Label'] = '{}-{} via {} from {} <-> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+                    path['Label'] = '{}-{} via {} from {} <-> {}'.format(path['_from'], path['_to'], path['Type'],
+                                                                        df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
                 else:
-                    path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_from'], path['_to'], path['Type'],df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
+                    path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_from'], path['_to'], path['Type'],
+                                                                        df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
             else:
                 if path['Bidirectional']:
                     path['Label'] += ', {} <-> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
@@ -241,19 +250,20 @@ def main():
                 path['TotalSourceArea(nm^2)'] = float(df.loc[i, '_fromArea (nm^2)'])
             else:
                 # Catch if there is no area
-                areaIssue = {'Type': 'Area undefined','Location': 'Child ID: {}'.format(df.loc[i, 'SourceID'])}
+                areaIssue = {'Type': 'Area undefined', 'Info': path}
                 path['TotalSourceArea(nm^2)'] = 0
                 issues.append(areaIssue)
             if df.loc[i, '_toArea (nm^2)'] != 'undefined':
                 path['TotalTargetArea(nm^2)'] = float(df.loc[i, '_toArea (nm^2)'])
             else:
                 # Catch if there is no area
-                areaIssue = {'Type': 'Area undefined','Location': 'Child ID: {}'.format(df.loc[i, 'TargetID'])}
+                areaIssue = {'Type': 'Area undefined', 'Info': path}
                 path['TotalTargetArea(nm^2)'] = 0
                 issues.append(areaIssue)
-            if round(path['TotalSourceArea(nm^2)']) != round(path['TotalTargetArea(nm^2)']):
+            if path['Bidirectional'] and (round(path['TotalSourceArea(nm^2)']) != round(path['TotalTargetArea(nm^2)'])):
                 # Catch if areas are not similar
-                areaIssue = {'Type': 'Areas not similar','Location': 'SourceID: {}, SourceArea: {} -- TargetID: {}, TargetArea: {}'.format(df.loc[i, 'SourceID'], path['TotalSourceArea(nm^2)'], df.loc[i, 'TargetID'],path['TotalTargetArea(nm^2)'])}
+                areaIssue = {'Type': 'Areas not similar',
+                            'Info': path}
                 issues.append(areaIssue)
         links.append(path)
 
@@ -270,7 +280,7 @@ def main():
         dict_writer = csv.DictWriter(f, node_keys)
         dict_writer.writeheader()
         dict_writer.writerows(nodes)
-    
+
     # Create issues files
     issue_keys = issues[0].keys()
     with open('issues.csv', 'w', newline='') as f:
