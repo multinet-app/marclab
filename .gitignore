@@ -5,3 +5,4 @@ structure_type.json
 links.csv
 nodes.csv
 issues.csv
+.DS_Store
