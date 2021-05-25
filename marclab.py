@@ -3,6 +3,8 @@ import requests
 import sys
 import csv
 import pandas as pd
+import copy
+import bisect
 from typing import Any, List, TypedDict, Optional, cast
 
 
@@ -163,7 +165,7 @@ def main():
 
     # Add structure spatial cache to structures dict
     for structure in structure_spatial_caches:
-        structure_copy = structure
+        structure_copy = copy.deepcopy(structure)
         structure_copy['Area (nm^2)'] = structure_copy['Area']
         del structure_copy['Area']
         structure_copy['Volume (nm^3)'] = structure_copy['Volume']
@@ -174,26 +176,41 @@ def main():
     # Remove attributes that don't make sense for structure type
     nodes = []
     edges_dict = {}
+    # Track IDs of cells with TypeID == 1
+    cell_list = []
+
+
+    def search_list(a, x):
+        # Locate the leftmost value exactly equal to x
+        i = bisect.bisect_left(a, x)
+        if i != len(a) and a[i] == x:
+            return 'found'
+
 
     for value in structures_dict.values():
         if value['TypeID'] == 1:
-            value_copy = value
+            value_copy = copy.deepcopy(value)
             del value_copy['Area (nm^2)']
             nodes.append(value_copy)
+            cell_list.append(value['ID'])
         else:
-            if value['ParentID'] != 1:
-                # Catch if children not assigned parent
-                if not value['ParentID']:
-                    noParentIssue = {'Type': 'Parentless child', 'Info': value}
-                    issues.append(noParentIssue)
-                # Catch if children are assigned another child as a parent
-                else:
-                    childAsParentIssues = {'Type': 'Child as parent', 'Info': value}
-                    issues.append(childAsParentIssues)
             # Create edges dictionary with ID as key
             value_copy = value
             del value_copy['Volume (nm^3)']
             edges_dict[value_copy['ID']] = value_copy
+
+    # Catch errors for parent mislabeling
+    for value in structures_dict.values():
+        if value['TypeID'] != 1:
+            # Catch if children not assigned parent
+            if not value['ParentID']:
+                noParentIssue = {'Type': 'Parentless child', 'Info': value}
+                issues.append(noParentIssue)
+            # Catch if children are assigned another child as a parent
+            elif search_list(cell_list, value['ParentID']) != 'found':
+                childAsParentIssues = {'Type': 'Child as parent', 'Info': value}
+                issues.append(childAsParentIssues)
+
 
     edges_parent_list = []
     # Link edges based on ParentID associated with the SourceID and TargetID
@@ -224,8 +241,7 @@ def main():
             elif 'Post' in df.loc[i, '_fromTypeLabel']:
                 # Catch if a source label includes "Post"
                 labelIssue = {'Type': 'Pre/Post Label',
-                            'Info': 'SourceID: {}, labeled: {}'.format(df.loc[i, 'SourceID'],
-                                                                            df.loc[i, '_fromTypeLabel'])}
+                            'Info': 'SourceID: {}, labeled: {}'.format(df.loc[i, 'SourceID'], df.loc[i, '_fromTypeLabel'])}
                 issues.append(labelIssue)
                 edgeType = df.loc[i, '_fromTypeLabel']
             else:
