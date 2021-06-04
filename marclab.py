@@ -183,8 +183,7 @@ def main():
     def search_list(a, x):
         # Locate the leftmost value exactly equal to x
         i = bisect.bisect_left(a, x)
-        if i != len(a) and a[i] == x:
-            return 'found'
+        return i != len(a) and a[i] == x
 
 
     for value in structures_dict.values():
@@ -207,7 +206,7 @@ def main():
                 noParentIssue = {'Type': 'Parentless child', 'Info': value}
                 issues.append(noParentIssue)
             # Catch if children are assigned another child as a parent
-            elif search_list(cell_list, value['ParentID']) != 'found':
+            elif search_list(cell_list, value['ParentID']):
                 childAsParentIssues = {'Type': 'Child as parent', 'Info': value}
                 issues.append(childAsParentIssues)
 
