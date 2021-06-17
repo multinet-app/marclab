@@ -1,0 +1,35 @@
+name: Run Marclab Script
+
+on:
+  workflow_dispatch:
+    inputs:
+      volume:
+        description: The volume to run the script on
+        required: true
+        default: RPC1
+
+jobs:
+  run:
+    name: Run script on specified volume
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+
+      - name: Install poetry
+        run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+
+      - name: Configure poetry
+        run: echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+
+      - name: Install deps
+        run: poetry install
+
+      - name: Run script on volume '${{ github.event.inputs.volume }}'
+        run: poetry run python marclab.py ${{ github.event.inputs.volume }}
+
+      - name: List out new files
+        run: ls -alh .
