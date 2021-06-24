@@ -28,18 +28,16 @@ def main():
         requests.delete(network_url)
 
     # Delete node table if it exists
-    r = requests.get(f'{base_url}/api/workspaces/{workspace}/tables/{NODE_TABLE_NAME}')
+    node_table_url = f'{base_url}/api/workspaces/{workspace}/tables/{NODE_TABLE_NAME}'
+    r = requests.get(node_table_url)
     if r.status_code != 404:
-        # TODO
-        pass
+        requests.delete(node_table_url)
 
     # Delete edge table if it exists
-    r = requests.get(f'{base_url}/api/workspaces/{workspace}/tables/{EDGE_TABLE_NAME}')
+    edge_table_url = f'{base_url}/api/workspaces/{workspace}/tables/{EDGE_TABLE_NAME}'
+    r = requests.get(edge_table_url)
     if r.status_code != 404:
-        # TODO
-        pass
-
-
+        requests.delete(edge_table_url)
 
 
 
