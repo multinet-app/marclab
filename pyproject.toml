@@ -9,6 +9,7 @@ license = "Apache-2.0"
 python = "^3.8"
 requests = "^2.25.1"
 pandas = "^1.2.4"
+django-s3-file-field-client = "^0.1.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.812"

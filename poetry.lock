@@ -64,6 +64,17 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "django-s3-file-field-client"
+version = "0.1.1"
+description = "A Python client library for django-s3-file-field."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+requests = "*"
+
+[[package]]
 name = "flake8"
 version = "3.9.2"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -269,7 +280,7 @@ brotli = ["brotlipy (>=0.6.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "51197b29a47fc0097e63020d9321eb145b6f0d8f4652fe9b7ae99b52be44e449"
+content-hash = "39f3c91e53b709b6af189b16c85c34565f7ac0c81ed0073687ba513ade67b5ba"
 
 [metadata.files]
 appdirs = [
@@ -295,6 +306,10 @@ click = [
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
+]
+django-s3-file-field-client = [
+    {file = "django-s3-file-field-client-0.1.1.tar.gz", hash = "sha256:fd7414b66f06239d888c7747f94980b6f946d3645fbd2042a4dc41d8ffc64215"},
+    {file = "django_s3_file_field_client-0.1.1-py3-none-any.whl", hash = "sha256:24fc0997c6a289e5a99464c22eb0e883720380421dba2949a261f53303a87e19"},
 ]
 flake8 = [
     {file = "flake8-3.9.2-py2.py3-none-any.whl", hash = "sha256:bf8fd333346d844f616e8d47905ef3a3384edae6b4e9beb0c5101e25e3110907"},
