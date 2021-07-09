@@ -31,5 +31,8 @@ jobs:
       - name: Run script on volume '${{ github.event.inputs.volume }}'
         run: poetry run python marclab.py ${{ github.event.inputs.volume }}
 
+      - name: Upload script output to multinet instance
+        run: poetry run python multinet.py https://api.next.multinet.app marclab ${{ secrets.API_TOKEN }}
+
       - name: List out new files
         run: ls -alh .
