@@ -10,6 +10,7 @@ python = "^3.8"
 requests = "^2.25.1"
 pandas = "^1.2.4"
 django-s3-file-field-client = "^0.1.1"
+requests-toolbelt = "^0.9.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.812"
