@@ -1,4 +1,5 @@
 import shutil
+import time
 import tempfile
 import requests
 import sys
@@ -74,7 +75,19 @@ def main():
                 "field_value": field_value,
                 "edge": False,
                 "table_name": NODE_TABLE_NAME,
-                # TODO: Maybe place columns field here
+                "columns": {
+                    "TypeID": "category",
+                    "Verified": "boolean",
+                    "Confidence": "number",
+                    "ParentID": "category",
+                    "Created": "date",
+                    "LastModified": "date",
+                    "TypeLabel": "category",
+                    "Volume (nm^3)": "number",
+                    "MaxDimension": "number",
+                    "MinZ": "number",
+                    "MaxZ": "number",
+                },
             },
         )
     )
@@ -93,10 +106,20 @@ def main():
                 "field_value": field_value,
                 "edge": True,
                 "table_name": EDGE_TABLE_NAME,
-                # TODO: Maybe place columns field here
+                "columns": {
+                    "TotalChildren": "number",
+                    "LastModified": "date",
+                    "Bidirectional": "boolean",
+                    "Type": "category",
+                    "TotalSourceArea(nm^2)": "number",
+                    "TotalTargetArea(nm^2)": "number",
+                },
             },
         )
     )
+
+    # Sleep to ensure files are processed
+    time.sleep(1)
 
     # Create network
     raise_for_status(
