@@ -11,6 +11,7 @@ from s3_file_field_client import S3FileFieldClient
 
 NODE_TABLE_NAME = "nodes"
 EDGE_TABLE_NAME = "links"
+ISSUES_TABLE_NAME = "issues"
 
 # TODO: Change to something better
 NETWORK_NAME = "network"
@@ -91,6 +92,12 @@ def main():
             file_stream, "links.csv", "api.Upload.blob"
         )["field_value"]
 
+    # Upload issues.csv (not used in network)
+    with open("./issues.csv", "rb") as file_stream:
+        issues_field_value = s3ff_client.upload_file(
+            file_stream, "issues.csv", "api.Upload.blob"
+        )["field_value"]
+
     # Update base url, since only workspace endpoints are needed now
     api_client.base_url = f"{base_url}/api/workspaces/{workspace}/"
 
@@ -144,7 +151,20 @@ def main():
     raise_for_status(r)
     links_upload = r.json()
 
-    await_tasks_finished(api_client, [nodes_upload, links_upload])
+    # Create issues table
+    r = api_client.post(
+        f"uploads/csv/",
+        json={
+            "field_value": issues_field_value,
+            "edge": False,
+            "table_name": ISSUES_TABLE_NAME,
+            "columns": {},
+        },
+    )
+    raise_for_status(r)
+    issues_upload = r.json()
+
+    await_tasks_finished(api_client, [nodes_upload, links_upload, issues_upload])
 
     # Create network
     raise_for_status(
