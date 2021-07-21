@@ -77,7 +77,7 @@ def main():
     api_client.headers.update({"Authorization": f"Token {api_token}"})
 
     # Upload all files to S3
-    s3ff_client = S3FileFieldClient(f"/api/s3-upload/", api_client)
+    s3ff_client = S3FileFieldClient("/api/s3-upload/", api_client)
 
     # Upload nodes.csv
     with open("./nodes.csv", "rb") as file_stream:
@@ -108,7 +108,7 @@ def main():
 
     # Create nodes table
     r = api_client.post(
-        f"uploads/csv/",
+        "uploads/csv/",
         json={
             "field_value": nodes_field_value,
             "edge": False,
@@ -133,7 +133,7 @@ def main():
 
     # Create links table
     r = api_client.post(
-        f"uploads/csv/",
+        "uploads/csv/",
         json={
             "field_value": links_field_value,
             "edge": True,
@@ -153,7 +153,7 @@ def main():
 
     # Create issues table
     r = api_client.post(
-        f"uploads/csv/",
+        "uploads/csv/",
         json={
             "field_value": issues_field_value,
             "edge": False,
@@ -169,7 +169,7 @@ def main():
     # Create network
     raise_for_status(
         api_client.post(
-            f"networks/",
+            "networks/",
             json={"name": NETWORK_NAME, "edge_table": EDGE_TABLE_NAME},
         )
     )
