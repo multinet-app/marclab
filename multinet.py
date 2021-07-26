@@ -77,6 +77,8 @@ def main():
     api_client = BaseUrlSession(base_url=base_url)
     api_client.headers.update({"Authorization": f"Token {api_token}"})
 
+    print("Uploading files...")
+
     # Upload all files to S3
     s3ff_client = S3FileFieldClient("/api/s3-upload/", api_client)
 
@@ -166,6 +168,8 @@ def main():
     raise_for_status(r)
     issues_upload = r.json()
 
+    print("Processing files...")
+
     # Wait for nodes and links tables to be created
     await_tasks_finished(api_client, [nodes_upload, links_upload])
 
@@ -177,8 +181,13 @@ def main():
         )
     )
 
+    print("Network created.")
+    print("Processing issues (this may take some time)...")
+
     # Wait for issues to finish being processed
     await_tasks_finished(api_client, [issues_upload])
+
+    print("Synchronization finished.")
 
 
 if __name__ == "__main__":
