@@ -45,11 +45,12 @@ def fix_links_csv():
 
 def await_tasks_finished(api_client: BaseUrlSession, tasks: List[Dict]):
     tasks_set: Set[int] = {t["id"] for t in tasks}
-
+    sleep_time = 0.1
     while tasks_set:
-        time.sleep(0.1)
+        sleep_time *= 2
+        time.sleep(sleep_time)
         for task_id in list(tasks_set):
-            r = api_client.get(f"uploads/{task_id}")
+            r = api_client.get(f"uploads/{task_id}/")
             raise_for_status(r)
 
             if r.json()["status"] == "FAILED":
