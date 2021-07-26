@@ -105,6 +105,7 @@ def main():
     api_client.delete(f"networks/{NETWORK_NAME}/")
     api_client.delete(f"tables/{NODE_TABLE_NAME}/")
     api_client.delete(f"tables/{EDGE_TABLE_NAME}/")
+    api_client.delete(f"tables/{ISSUES_TABLE_NAME}/")
 
     # Create nodes table
     r = api_client.post(
