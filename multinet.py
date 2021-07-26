@@ -166,7 +166,8 @@ def main():
     raise_for_status(r)
     issues_upload = r.json()
 
-    await_tasks_finished(api_client, [nodes_upload, links_upload, issues_upload])
+    # Wait for nodes and links tables to be created
+    await_tasks_finished(api_client, [nodes_upload, links_upload])
 
     # Create network
     raise_for_status(
@@ -175,6 +176,9 @@ def main():
             json={"name": NETWORK_NAME, "edge_table": EDGE_TABLE_NAME},
         )
     )
+
+    # Wait for issues to finish being processed
+    await_tasks_finished(api_client, [issues_upload])
 
 
 if __name__ == "__main__":
