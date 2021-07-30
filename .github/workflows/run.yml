@@ -33,6 +33,3 @@ jobs:
 
       - name: Upload script output to multinet instance
         run: poetry run python multinet.py https://api.next.multinet.app marclab ${{ secrets.API_TOKEN }}
-
-      - name: List out new files
-        run: ls -alh .
