@@ -31,10 +31,11 @@ jobs:
       - name: Run script on volume '${{ github.event.inputs.volume }}'
         run: poetry run python marclab.py ${{ github.event.inputs.volume }} 
         
-      - uses: actions/upload-artifact@v2
+      - name: Archive csv files
+        uses: actions/upload-artifact@v2
         with:
           name: artifacts
-          path: /artifacts/
+          path: artifacts/*.csv
       
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v2
