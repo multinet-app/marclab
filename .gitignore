@@ -2,5 +2,4 @@ structures.json
 structure_spatial_caches.json
 structure_links.json
 structure_type.json
-*.csv
 .DS_Store
