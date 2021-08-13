@@ -284,21 +284,21 @@ def main():
 
     # Create links file
     link_keys = links[0].keys()
-    with open('links.csv', 'w', newline='') as f:
+    with open('artifacts/links.csv', 'w', newline='') as f:
         dict_writer = csv.DictWriter(f, link_keys)
         dict_writer.writeheader()
         dict_writer.writerows(links)
 
     # Create nodes file
     node_keys = nodes[0].keys()
-    with open('nodes.csv', 'w', newline='') as f:
+    with open('artifacts/nodes.csv', 'w', newline='') as f:
         dict_writer = csv.DictWriter(f, node_keys)
         dict_writer.writeheader()
         dict_writer.writerows(nodes)
 
     # Create issues files
     issue_keys = issues[0].keys()
-    with open('issues.csv', 'w', newline='') as f:
+    with open('artifacts/issues.csv', 'w', newline='') as f:
         dict_writer = csv.DictWriter(f, issue_keys)
         dict_writer.writeheader()
         dict_writer.writerows(issues)
