@@ -34,7 +34,7 @@ jobs:
       - name: Archive csv files
         uses: actions/upload-artifact@v2
         with:
-          name: artifacts
+          name: ${{ github.event.inputs.volume }}
           path: artifacts/*.csv
       
       - name: Download all workflow run artifacts
