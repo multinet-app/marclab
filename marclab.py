@@ -190,6 +190,12 @@ def main():
         if value['TypeID'] == 1:
             value_copy = copy.deepcopy(value)
             del value_copy['Area (nm^2)']
+            ######################################
+            # delete Unnecessary Fields from Nodes
+            del value_copy['Notes']
+            del value_copy['BoundingRect']
+            del value_copy['ConvexHull']
+            ######################################
             nodes.append(value_copy)
             cell_list.append(value['ID'])
         else:
