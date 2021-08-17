@@ -131,6 +131,7 @@ def main():
     # tables, etc.
     # List for tracking potential data issues
     issues = []
+    issues_set = {'Issue', 'Info'}
 
     # Create dict of structure types (cells and synapses)
     type_id_dict = {}
@@ -203,11 +204,17 @@ def main():
         if value['TypeID'] != 1:
             # Catch if children not assigned parent
             if not value['ParentID']:
-                noParentIssue = {'Type': 'Parentless child', 'Info': value}
+                noParentIssue = {'Issue': 'Parentless child'}
+                for keys, info in value.items():
+                    issues_set.add(keys)
+                    noParentIssue[keys] = info
                 issues.append(noParentIssue)
             # Catch if children are assigned another child as a parent
             elif search_list(cell_list, value['ParentID']):
-                childAsParentIssues = {'Type': 'Child as parent', 'Info': value}
+                childAsParentIssues = {'Issue': 'Child as parent'}
+                for keys, info in value.items():
+                    issues_set.add(keys)
+                    childAsParentIssues[keys] = info
                 issues.append(childAsParentIssues)
 
 
@@ -239,7 +246,7 @@ def main():
                 edgeType = df.loc[i, '_fromTypeLabel'].replace('Pre', '')
             elif 'Post' in df.loc[i, '_fromTypeLabel']:
                 # Catch if a source label includes "Post"
-                labelIssue = {'Type': 'Pre/Post Label',
+                labelIssue = {'Issue': 'Pre/Post Label',
                             'Info': 'SourceID: {}, labeled: {}'.format(df.loc[i, 'SourceID'], df.loc[i, '_fromTypeLabel'])}
                 issues.append(labelIssue)
                 edgeType = df.loc[i, '_fromTypeLabel']
@@ -265,20 +272,28 @@ def main():
                 path['TotalSourceArea(nm^2)'] = float(df.loc[i, '_fromArea (nm^2)'])
             else:
                 # Catch if there is no area
-                areaIssue = {'Type': 'Area undefined', 'Info': path}
+                areaIssue = {'Issue': 'Area undefined'}
                 path['TotalSourceArea(nm^2)'] = 0
+                for keys, info in path.items():
+                    issues_set.add(keys)
+                    areaIssue[keys] = info
                 issues.append(areaIssue)
             if df.loc[i, '_toArea (nm^2)'] != 'undefined':
                 path['TotalTargetArea(nm^2)'] = float(df.loc[i, '_toArea (nm^2)'])
             else:
                 # Catch if there is no area
-                areaIssue = {'Type': 'Area undefined', 'Info': path}
+                areaIssue = {'Issue': 'Area undefined'}
                 path['TotalTargetArea(nm^2)'] = 0
+                for keys, info in path.items():
+                    issues_set.add(keys)
+                    areaIssue[keys] = info
                 issues.append(areaIssue)
             if path['Bidirectional'] and (round(path['TotalSourceArea(nm^2)']) != round(path['TotalTargetArea(nm^2)'])):
                 # Catch if areas are not similar
-                areaIssue = {'Type': 'Areas not similar',
-                            'Info': path}
+                areaIssue = {'Issue': 'Areas not similar'}
+                for keys, info in path.items():
+                    issues_set.add(keys)
+                    areaIssue[keys] = info
                 issues.append(areaIssue)
         links.append(path)
 
@@ -296,8 +311,12 @@ def main():
         dict_writer.writeheader()
         dict_writer.writerows(nodes)
 
+    # Reorder issues_set
+    issue_keys = list(issues_set)
+    issue_keys.remove('Issue')
+    issue_keys = ['Issue'] + issue_keys
+
     # Create issues files
-    issue_keys = issues[0].keys()
     with open('issues.csv', 'w', newline='') as f:
         dict_writer = csv.DictWriter(f, issue_keys)
         dict_writer.writeheader()
