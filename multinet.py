@@ -1,4 +1,6 @@
 import time
+from datetime import datetime
+import pytz
 from typing import Dict, List, Set
 import sys
 from requests.models import Response
@@ -46,10 +48,6 @@ def main():
     # Extract args
     _, base_url, workspace, api_token, volume = sys.argv
 
-    NODE_TABLE_NAME = f"{volume}_nodes"
-    EDGE_TABLE_NAME = f"{volume}_links"
-    NETWORK_NAME = f"{volume}"
-
     # Inject auth token into every request
     api_client = BaseUrlSession(base_url=base_url)
     api_client.headers.update({"Authorization": f"Bearer {api_token}"})
@@ -89,6 +87,10 @@ def main():
     for table in tables:
         api_client.delete(f"tables/{table}/")
     
+    # Generate new network and table names
+    NODE_TABLE_NAME = f"{volume}_nodes_{datetime.now(pytz.timezone('America/Denver')).strftime('%Y-%m-%d_%H-%M')}"
+    EDGE_TABLE_NAME = f"{volume}_links_{datetime.now(pytz.timezone('America/Denver')).strftime('%Y-%m-%d_%H-%M')}"
+    NETWORK_NAME = f"{volume}_{datetime.now(pytz.timezone('America/Denver')).strftime('%Y-%m-%d_%H-%M')}"
 
     # Create nodes table
     r = api_client.post(
