@@ -26,23 +26,6 @@ def raise_for_status(r: Response):
         raise error
 
 
-def fix_links_csv():
-    outfile = tempfile.NamedTemporaryFile(mode="w", delete=False)
-    with open("links.csv", "r") as csvfile:
-        reader = csv.DictReader(csvfile)
-        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
-        writer.writeheader()
-
-        for row in reader:
-            if len(row["_from"].split("/")) != 2:
-                row["_from"] = f"{NODE_TABLE_NAME}/{row['_from']}"
-            if len(row["_to"].split("/")) != 2:
-                row["_to"] = f"{NODE_TABLE_NAME}/{row['_to']}"
-            writer.writerow(row)
-
-    shutil.move(outfile.name, "links.csv")
-
-
 def await_tasks_finished(api_client: BaseUrlSession, tasks: List[Dict]):
     tasks_set: Set[int] = {t["id"] for t in tasks}
     sleep_time = 0.1
