@@ -1,9 +1,6 @@
-import shutil
 import time
-import tempfile
 from typing import Dict, List, Set
 import sys
-import csv
 from requests.models import Response
 from requests.exceptions import HTTPError
 from requests_toolbelt.sessions import BaseUrlSession
@@ -11,7 +8,6 @@ from s3_file_field_client import S3FileFieldClient
 
 NODE_TABLE_NAME = "nodes"
 EDGE_TABLE_NAME = "links"
-ISSUES_TABLE_NAME = "issues"
 
 # TODO: Change to something better
 NETWORK_NAME = "network"
@@ -77,12 +73,6 @@ def main():
             file_stream, "links.csv", "api.Upload.blob"
         )["field_value"]
 
-    # Upload issues.csv (not used in network)
-    with open("./issues.csv", "rb") as file_stream:
-        issues_field_value = s3ff_client.upload_file(
-            file_stream, "issues.csv", "api.Upload.blob"
-        )["field_value"]
-
     # Update base url, since only workspace endpoints are needed now
     api_client.base_url = f"{base_url}/api/workspaces/{workspace}/"
 
@@ -90,7 +80,6 @@ def main():
     api_client.delete(f"networks/{NETWORK_NAME}/")
     api_client.delete(f"tables/{NODE_TABLE_NAME}/")
     api_client.delete(f"tables/{EDGE_TABLE_NAME}/")
-    api_client.delete(f"tables/{ISSUES_TABLE_NAME}/")
 
     # Create nodes table
     r = api_client.post(
@@ -137,19 +126,6 @@ def main():
     raise_for_status(r)
     links_upload = r.json()
 
-    # Create issues table
-    r = api_client.post(
-        "uploads/csv/",
-        json={
-            "field_value": issues_field_value,
-            "edge": False,
-            "table_name": ISSUES_TABLE_NAME,
-            "columns": {},
-        },
-    )
-    raise_for_status(r)
-    issues_upload = r.json()
-
     print("Processing files...")
 
     # Wait for nodes and links tables to be created
@@ -164,10 +140,6 @@ def main():
     )
 
     print("Network created.")
-    print("Processing issues (this may take some time)...")
-
-    # Wait for issues to finish being processed
-    await_tasks_finished(api_client, [issues_upload])
 
     print("Synchronization finished.")
 
