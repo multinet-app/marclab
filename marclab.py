@@ -5,6 +5,7 @@ import csv
 import pandas as pd
 import copy
 import bisect
+import os
 from typing import Any, List, TypedDict, Optional, cast
 
 
@@ -122,6 +123,9 @@ def main():
             else:
                 edge_obj[value] = edge.get(key, '')
         edges.append(edge_obj)
+
+    # Make artifacts folder
+    os.makedirs('artifacts', exist_ok=True)
 
     # Create links file
     link_keys = edges[0].keys()
