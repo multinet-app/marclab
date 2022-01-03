@@ -75,7 +75,7 @@ def main():
 
     # Inject auth token into every request
     api_client = BaseUrlSession(base_url=base_url)
-    api_client.headers.update({"Authorization": f"Token {api_token}"})
+    api_client.headers.update({"Authorization": f"Bearer {api_token}"})
 
     print("Uploading files...")
 
