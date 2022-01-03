@@ -6,12 +6,6 @@ from requests.exceptions import HTTPError
 from requests_toolbelt.sessions import BaseUrlSession
 from s3_file_field_client import S3FileFieldClient
 
-NODE_TABLE_NAME = "nodes"
-EDGE_TABLE_NAME = "links"
-
-# TODO: Change to something better
-NETWORK_NAME = "network"
-
 
 def raise_for_status(r: Response):
     """A wrapper for repsonse.raise_for_status."""
@@ -43,14 +37,18 @@ def await_tasks_finished(api_client: BaseUrlSession, tasks: List[Dict]):
 
 
 def main():
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 5:
         print(
-            "usage: multinet.py <instance-url> <workspace> <api-token>", file=sys.stderr
+            "usage: multinet.py <instance-url> <workspace> <api-token> <volume>", file=sys.stderr
         )
         return 1
 
     # Extract args
-    _, base_url, workspace, api_token = sys.argv
+    _, base_url, workspace, api_token, volume = sys.argv
+
+    NODE_TABLE_NAME = f"{volume}_nodes"
+    EDGE_TABLE_NAME = f"{volume}_links"
+    NETWORK_NAME = f"{volume}"
 
     # Inject auth token into every request
     api_client = BaseUrlSession(base_url=base_url)
