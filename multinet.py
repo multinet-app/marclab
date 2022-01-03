@@ -74,10 +74,21 @@ def main():
     # Update base url, since only workspace endpoints are needed now
     api_client.base_url = f"{base_url}/api/workspaces/{workspace}/"
 
+    # Get names of all networks and tables
+    networks = [x["name"] for x in api_client.get("networks/").json().get("results")]
+    tables = [x["name"] for x in api_client.get("tables/").json().get("results")]
+
+    # Filter names to ones we want to remove (like the volume)
+    networks = list(filter(lambda x: volume in x, networks))
+    tables = list(filter(lambda x: volume in x, tables))
+
     # Delete network and tables if they exist
-    api_client.delete(f"networks/{NETWORK_NAME}/")
-    api_client.delete(f"tables/{NODE_TABLE_NAME}/")
-    api_client.delete(f"tables/{EDGE_TABLE_NAME}/")
+    for network in networks:
+        api_client.delete(f"networks/{network}/")
+
+    for table in tables:
+        api_client.delete(f"tables/{table}/")
+    
 
     # Create nodes table
     r = api_client.post(
