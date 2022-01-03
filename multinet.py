@@ -83,14 +83,13 @@ def main():
     s3ff_client = S3FileFieldClient("/api/s3-upload/", api_client)
 
     # Upload nodes.csv
-    with open("./nodes.csv", "rb") as file_stream:
+    with open("artifacts/nodes.csv", "rb") as file_stream:
         nodes_field_value = s3ff_client.upload_file(
             file_stream, "nodes.csv", "api.Upload.blob"
         )["field_value"]
 
     # Upload links.csv
-    fix_links_csv()
-    with open("./links.csv", "rb") as file_stream:
+    with open("artifacts/links.csv", "rb") as file_stream:
         links_field_value = s3ff_client.upload_file(
             file_stream, "links.csv", "api.Upload.blob"
         )["field_value"]
