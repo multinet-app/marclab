@@ -117,9 +117,9 @@ def main():
                 # Store list of child objects
                 edge_obj[key] = edge.get(key, '')
             elif key == 'SourceStructureID':
-                edge_obj['_from'] = 'nodes/' + str(edge.get(key, ''))
+                edge_obj['_from'] = f"{network_name}_nodes/{str(edge.get(key, ''))}"
             elif key == 'TargetStructureID':
-                edge_obj['_to'] = 'nodes/' + str(edge.get(key, ''))
+                edge_obj['_to'] = f"{network_name}_nodes/{str(edge.get(key, ''))}"
             else:
                 edge_obj[value] = edge.get(key, '')
         edges.append(edge_obj)

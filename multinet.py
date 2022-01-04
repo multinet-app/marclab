@@ -88,8 +88,8 @@ def main():
         api_client.delete(f"tables/{table}/")
     
     # Generate new network and table names
-    NODE_TABLE_NAME = f"{volume}_nodes_{datetime.now(pytz.timezone('America/Denver')).strftime('%Y-%m-%d_%H-%M')}"
-    EDGE_TABLE_NAME = f"{volume}_links_{datetime.now(pytz.timezone('America/Denver')).strftime('%Y-%m-%d_%H-%M')}"
+    NODE_TABLE_NAME = f"{volume}_nodes"
+    EDGE_TABLE_NAME = f"{volume}_links"
     NETWORK_NAME = f"{volume}_{datetime.now(pytz.timezone('America/Denver')).strftime('%Y-%m-%d_%H-%M')}"
 
     # Create nodes table
