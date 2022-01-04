@@ -20,7 +20,7 @@ jobs:
           architecture: 'x64'
 
       - name: Install poetry
-        run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+        run: curl -sSL https://install.python-poetry.org | python3 -
 
       - name: Configure poetry
         run: echo "$HOME/.poetry/bin" >> $GITHUB_PATH
@@ -31,5 +31,5 @@ jobs:
       - name: Run script on volume '${{ github.event.inputs.volume }}'
         run: poetry run python marclab.py ${{ github.event.inputs.volume }}
 
-      - name: Upload script output to multinet instance
-        run: poetry run python multinet.py https://api.next.multinet.app marclab ${{ secrets.API_TOKEN }}
+      - name: Upload ${{ github.event.inputs.volume }} to multinet instance
+        run: poetry run python multinet.py https://api.multinet.app marclab ${{ secrets.API_TOKEN }} ${{ github.event.inputs.volume }}
