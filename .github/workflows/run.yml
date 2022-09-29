@@ -31,7 +31,12 @@ jobs:
       - name: Run script on volume '${{ github.event.inputs.volume }}'
         run: poetry run python marclab.py ${{ github.event.inputs.volume }} 
         
-      - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v3
         with:
+          name: links
+          path: ../artifacts
+      
+      - uses: actions/download-artifact@v3
+        with:
+          name: nodes
           path: ../artifacts
