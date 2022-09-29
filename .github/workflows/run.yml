@@ -33,3 +33,5 @@ jobs:
         
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v3
+        with:
+          path: ../artifacts
