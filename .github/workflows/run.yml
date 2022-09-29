@@ -20,7 +20,7 @@ jobs:
           architecture: 'x64'
 
       - name: Install poetry
-        run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+        run: curl -sSL https://install.python-poetry.org | python3 -
 
       - name: Configure poetry
         run: echo "$HOME/.poetry/bin" >> $GITHUB_PATH
@@ -31,11 +31,5 @@ jobs:
       - name: Run script on volume '${{ github.event.inputs.volume }}'
         run: poetry run python marclab.py ${{ github.event.inputs.volume }} 
         
-      - name: Archive csv files
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ github.event.inputs.volume }}
-          path: artifacts/*.csv
-      
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v2

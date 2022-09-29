@@ -3,3 +3,7 @@ structure_spatial_caches.json
 structure_links.json
 structure_type.json
 .DS_Store
+links.csv
+nodes.csv
+issues.csv
+network.json

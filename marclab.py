@@ -5,54 +5,9 @@ import csv
 import pandas as pd
 import copy
 import bisect
+import os
 from typing import Any, List, TypedDict, Optional, cast
 
-
-class Structure(TypedDict):
-    ID: int
-    TypeID: int
-    Notes: str
-    Verified: bool
-    Tags: str
-    Confidence: float
-    Version: str
-    ParentID: Optional[int]
-    Created: str
-    Label: str
-    Username: str
-    LastModified: str
-
-
-class Geometry(TypedDict):
-    CoordinateSystemId: int
-    WellKnownText: str
-    WellKnownBinary: None
-
-
-class GeometryDict(TypedDict):
-    geometry: Geometry
-
-
-class StructureSpatialCache(TypedDict):
-    ID: int
-    Area: float
-    Volume: float
-    MaxDimension: int
-    MinZ: int
-    MaxZ: int
-    LastModified: str
-    BoundingRect: GeometryDict
-    ConvexHull: GeometryDict
-
-
-class StructureLink(TypedDict):
-    SourceID: int
-    TargetID: int
-    Bidirectional: bool
-    Tags: None
-    Username: str
-    Created: str
-    LastModified: str
 
 class StructureTypes(TypedDict):
     ID: int
@@ -77,6 +32,12 @@ def base_url(network: str) -> str:
 
     return f"https://websvc1.connectomes.utah.edu/{network}/OData"
 
+def network_url(network: str) -> str:
+    if not network:
+        raise RuntimeError("`network` must not be empty")
+
+    return f"http://websvc1.connectomes.utah.edu/{network}/export/network/JSON"
+
 
 def data_url(network: str, data_type: str) -> str:
     if not data_type:
@@ -86,20 +47,25 @@ def data_url(network: str, data_type: str) -> str:
 
 
 def get_data(network: str, data_type: str) -> List[Any]:
-    url = data_url(network, data_type)
-    data = []
-    page_num = 1
+    if data_type == "network":
+        url = network_url(network)
+        data = []
+        data = requests.get(url).json()
+    else:
+        url = data_url(network, data_type)
+        data = []
+        page_num = 1
 
-    print(f"Retrieving {data_type}...")
-    while url:
-        print(f"  page {page_num}...", file=sys.stderr, end="", flush=True)
-        page = requests.get(url).json()
-        print("done")
+        print(f"Retrieving {data_type}...")
+        while url:
+            print(f"  page {page_num}...", file=sys.stderr, end="", flush=True)
+            page = requests.get(url).json()
+            print("done")
 
-        data += page["value"]
+            data += page["value"]
 
-        url = page.get("@odata.nextLink")
-        page_num += 1
+            url = page.get("@odata.nextLink")
+            page_num += 1
 
     return data
 
@@ -109,191 +75,64 @@ def main():
     if len(sys.argv) < 2:
         print("usage: marclab.py <network-name>", file=sys.stderr)
         return 1
-    network = sys.argv[1]
+    network_name = sys.argv[1]
 
-    structures = cast(List[Structure], get_data(network, "Structures"))
-    with open("structures.json", "w") as f:
-        f.write(json.dumps(structures))
-
-    structure_spatial_caches = cast(List[StructureSpatialCache], get_data(network, "StructureSpatialCaches"))
-    with open("structure_spatial_caches.json", "w") as f:
-        f.write(json.dumps(structure_spatial_caches))
-
-    structure_links = cast(List[StructureLink], get_data(network, "StructureLinks"))
-    with open("structure_links.json", "w") as f:
-        f.write(json.dumps(structure_links))
-    
-    structure_types = cast(List[StructureTypes], get_data(network, "StructureTypes"))
+    # Key for telling us the structure types in network
+    structure_types = cast(List[StructureTypes], get_data(network_name, "StructureTypes"))
     with open("structure_type.json", "w") as f:
         f.write(json.dumps(structure_types))
-
-    # TODO: cool stuff with this data, including turning it into Multinet
-    # tables, etc.
-    # List for tracking potential data issues
-    issues = []
+    
+    network = get_data(network_name, "network")
+    with open("network.json", "w") as f:
+        f.write(json.dumps(network))
 
     # Create dict of structure types (cells and synapses)
     type_id_dict = {}
     for structure in structure_types:
         type_id_dict[structure['ID']] = structure['Name'].strip()
 
+    # Make the nice node csv
+    better_node_keys = {'StructureID': 'StructureID', 'TypeID': 'TypeID', 'Label': 'Label', 'Volume': 'Volume (nm^3)',
+                        'MaxDimension': 'MaxDimension', 'MinZ': 'MinZ', 'MaxZ': 'MaxZ'}
 
-    # Combine structure information across structures and structure_spatial_caches
-    # Separate into nodes (typeID = 1) and edges (typeID != 1)
-
-    # function for making ID value a key
-    def swap_key(dictionary, new_dict):
-        for line in dictionary:
-            # Add the Type Label
-            line['TypeLabel'] = type_id_dict[line['TypeID']]
-            # Add blank keys from Structural Cache
-            # This will account for dif in sizes
-            for key in structure_spatial_caches[0].keys():
-                if key == 'Area':
-                    line['Area (nm^2)'] = line.get(key, 'undefined')
-                elif key == 'Volume':
-                    line['Volume (nm^3)'] = line.get(key, 'undefined')
-                else:
-                    line[key] = line.get(key, 'undefined')
-            new_dict[line['ID']] = line
-        return new_dict
-
-
-    # Create dictionary with ID values as keys
-    structures_dict = {}
-    swap_key(structures, structures_dict)
-
-    # Add structure spatial cache to structures dict
-    for structure in structure_spatial_caches:
-        structure_copy = copy.deepcopy(structure)
-        structure_copy['Area (nm^2)'] = structure_copy['Area']
-        del structure_copy['Area']
-        structure_copy['Volume (nm^3)'] = structure_copy['Volume']
-        del structure_copy['Volume']
-        structures_dict[structure_copy['ID']] = {**structures_dict[structure_copy['ID']], **structure_copy}
-
-    # Separate the nodes (cells, Type ID == 1) from the edges (synapses, , Type ID != 1)
-    # Remove attributes that don't make sense for structure type
     nodes = []
-    edges_dict = {}
-    # Track IDs of cells with TypeID == 1
-    cell_list = []
+    for node in network['nodes']:
+        node_obj = {}
+        for key, value in better_node_keys.items():
+            node_obj[value] = node.get(key, '')
+        node_obj['StructureType'] = type_id_dict[node['TypeID']]
+        node_obj['_key'] = node['StructureID']
+        nodes.append(node_obj)
 
-
-    def search_list(a, x):
-        # Locate the leftmost value exactly equal to x
-        i = bisect.bisect_left(a, x)
-        return i != len(a) and a[i] == x
-
-
-    for value in structures_dict.values():
-        if value['TypeID'] == 1:
-            value_copy = copy.deepcopy(value)
-            del value_copy['Area (nm^2)']
-            ######################################
-            # delete Unnecessary Fields from Nodes
-            del value_copy['Notes']
-            del value_copy['BoundingRect']
-            del value_copy['ConvexHull']
-            ######################################
-            nodes.append(value_copy)
-            cell_list.append(value['ID'])
-        else:
-            # Create edges dictionary with ID as key
-            value_copy = value
-            del value_copy['Volume (nm^3)']
-            edges_dict[value_copy['ID']] = value_copy
-
-    # Catch errors for parent mislabeling
-    for value in structures_dict.values():
-        if value['TypeID'] != 1:
-            # Catch if children not assigned parent
-            if not value['ParentID']:
-                noParentIssue = {'Type': 'Parentless child', 'Info': value}
-                issues.append(noParentIssue)
-            # Catch if children are assigned another child as a parent
-            elif search_list(cell_list, value['ParentID']):
-                childAsParentIssues = {'Type': 'Child as parent', 'Info': value}
-                issues.append(childAsParentIssues)
-
-
-    edges_parent_list = []
-    # Link edges based on ParentID associated with the SourceID and TargetID
-    for links in structure_links:
-        if edges_dict.get(links['SourceID']) and edges_dict.get(links['TargetID']):
-            links['_from'] = "nodes/" + str(edges_dict[links['SourceID']]['ParentID'])
-            links['_to'] = "nodes/" + str(edges_dict[links['TargetID']]['ParentID'])
-            for source_key, source_value in edges_dict[links['SourceID']].items():
-                links['_from' + source_key] = source_value
-            for target_key, target_value in edges_dict[links['TargetID']].items():
-                links['_to' + target_key] = target_value
-            edges_parent_list.append(links)
-
-    # Group by source and target
-    df = pd.DataFrame(edges_parent_list)
-    links_df = df.groupby(['_to', '_from', '_fromTypeLabel', '_toTypeLabel']).groups
-
-    links = []
-    for row_index in links_df.values():
-        # Construct label: _to-_from via '_fromTypeLabel' from 'SourceID' -> 'TargetID'
-        # Keep track of number of children
-        path = {'Label': '', 'TotalChildren': 0}
-        for i in row_index:
-            # Determine label for for synapse
-            edgeType = ''
-            if 'Pre' in df.loc[i, '_fromTypeLabel']:
-                edgeType = df.loc[i, '_fromTypeLabel'].replace('Pre', '')
-            elif 'Post' in df.loc[i, '_fromTypeLabel']:
-                # Catch if a source label includes "Post"
-                labelIssue = {'Type': 'Pre/Post Label',
-                            'Info': 'SourceID: {}, labeled: {}'.format(df.loc[i, 'SourceID'], df.loc[i, '_fromTypeLabel'])}
-                issues.append(labelIssue)
-                edgeType = df.loc[i, '_fromTypeLabel']
+    # Make nice edge csv
+    better_edge_keys = {'ID': 'ID', 'SourceStructureID': 'SourceStructureID', 'TargetStructureID': 'TargetStructureID',
+                        'Label': 'Label', 'Type': 'Type', 'Directional': 'Directional', 'Links': '#ofChildren'}
+    edges = []
+    for edge in network['edges']:
+        edge_obj = {}
+        for key, value in better_edge_keys.items():
+            if key == 'Links':
+                # Get # of children
+                edge_obj[value] = len(edge.get(key, ''))
+                # Store list of child objects
+                edge_obj[key] = edge.get(key, '')
+            elif key == 'SourceStructureID':
+                edge_obj['_from'] = f"{network_name}_nodes/{str(edge.get(key, ''))}"
+            elif key == 'TargetStructureID':
+                edge_obj['_to'] = f"{network_name}_nodes/{str(edge.get(key, ''))}"
             else:
-                edgeType = df.loc[i, '_fromTypeLabel']
-            path = {**path, **df.loc[i, ['_from', '_to', 'LastModified', 'Bidirectional']], 'Type': edgeType}
-            if path['Label'] == '':
-                # Account for bidirectional
-                if path['Bidirectional']:
-                    path['Label'] = '{}-{} via {} from {} <-> {}'.format(path['_from'], path['_to'], path['Type'],
-                                                                        df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
-                else:
-                    path['Label'] = '{}-{} via {} from {} -> {}'.format(path['_from'], path['_to'], path['Type'],
-                                                                        df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
-            else:
-                if path['Bidirectional']:
-                    path['Label'] += ', {} <-> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
-                else:
-                    path['Label'] += ', {} -> {}'.format(df.loc[i, 'SourceID'], df.loc[i, 'TargetID'])
-            path['TotalChildren'] += 1
-            # Add source and target area to path
-            if df.loc[i, '_fromArea (nm^2)'] != 'undefined':
-                path['TotalSourceArea(nm^2)'] = float(df.loc[i, '_fromArea (nm^2)'])
-            else:
-                # Catch if there is no area
-                areaIssue = {'Type': 'Area undefined', 'Info': path}
-                path['TotalSourceArea(nm^2)'] = 0
-                issues.append(areaIssue)
-            if df.loc[i, '_toArea (nm^2)'] != 'undefined':
-                path['TotalTargetArea(nm^2)'] = float(df.loc[i, '_toArea (nm^2)'])
-            else:
-                # Catch if there is no area
-                areaIssue = {'Type': 'Area undefined', 'Info': path}
-                path['TotalTargetArea(nm^2)'] = 0
-                issues.append(areaIssue)
-            if path['Bidirectional'] and (round(path['TotalSourceArea(nm^2)']) != round(path['TotalTargetArea(nm^2)'])):
-                # Catch if areas are not similar
-                areaIssue = {'Type': 'Areas not similar',
-                            'Info': path}
-                issues.append(areaIssue)
-        links.append(path)
+                edge_obj[value] = edge.get(key, '')
+        edges.append(edge_obj)
+
+    # Make artifacts folder
+    os.makedirs('artifacts', exist_ok=True)
 
     # Create links file
-    link_keys = links[0].keys()
+    link_keys = edges[0].keys()
     with open('artifacts/links.csv', 'w', newline='') as f:
         dict_writer = csv.DictWriter(f, link_keys)
         dict_writer.writeheader()
-        dict_writer.writerows(links)
+        dict_writer.writerows(edges)
 
     # Create nodes file
     node_keys = nodes[0].keys()
@@ -301,13 +140,6 @@ def main():
         dict_writer = csv.DictWriter(f, node_keys)
         dict_writer.writeheader()
         dict_writer.writerows(nodes)
-
-    # Create issues files
-    issue_keys = issues[0].keys()
-    with open('artifacts/issues.csv', 'w', newline='') as f:
-        dict_writer = csv.DictWriter(f, issue_keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(issues)
 
     return 0
 
