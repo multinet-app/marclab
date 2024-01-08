@@ -10,7 +10,7 @@ from s3_file_field_client import S3FileFieldClient
 
 
 def raise_for_status(r: Response):
-    """A wrapper for repsonse.raise_for_status."""
+    """A wrapper for response.raise_for_status."""
     try:
         r.raise_for_status()
     except HTTPError as error:
@@ -86,7 +86,7 @@ def main():
 
     for table in tables:
         api_client.delete(f"tables/{table}/")
-    
+
     # Generate new network and table names
     NODE_TABLE_NAME = f"{volume}_nodes"
     EDGE_TABLE_NAME = f"{volume}_links"
@@ -108,6 +108,7 @@ def main():
                 "MinZ": "number",
                 "MaxZ": "number",
                 "StructureType": "category",
+                "_key": "primary key",
             },
             "quotechar": '"',
             "delimiter": ',',
@@ -129,6 +130,8 @@ def main():
                 "Type": "category",
                 "Directional": "boolean",
                 "#ofChildren": "number",
+                "_from": "edge source",
+                "_to": "edge to",
             },
             "quotechar": '"',
             "delimiter": ',',
