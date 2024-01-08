@@ -50,7 +50,7 @@ def get_data(network: str, data_type: str) -> List[Any]:
     if data_type == "network":
         url = network_url(network)
         data = []
-        data = requests.get(url).json()
+        data = requests.get(url, verify=False).json()
     else:
         url = data_url(network, data_type)
         data = []
@@ -59,7 +59,7 @@ def get_data(network: str, data_type: str) -> List[Any]:
         print(f"Retrieving {data_type}...")
         while url:
             print(f"  page {page_num}...", file=sys.stderr, end="", flush=True)
-            page = requests.get(url).json()
+            page = requests.get(url, verify=False).json()
             print("done")
 
             data += page["value"]

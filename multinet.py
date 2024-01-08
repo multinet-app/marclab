@@ -25,7 +25,7 @@ def await_tasks_finished(api_client: BaseUrlSession, tasks: List[Dict]):
         sleep_time *= 2
         time.sleep(sleep_time)
         for task_id in list(tasks_set):
-            r = api_client.get(f"uploads/{task_id}/")
+            r = api_client.get(f"uploads/{task_id}/", verify=False)
             raise_for_status(r)
 
             if r.json()["status"] == "FAILED":
@@ -73,8 +73,8 @@ def main():
     api_client.base_url = f"{base_url}/api/workspaces/{workspace}/"
 
     # Get names of all networks and tables
-    networks = [x["name"] for x in api_client.get("networks/").json().get("results")]
-    tables = [x["name"] for x in api_client.get("tables/").json().get("results")]
+    networks = [x["name"] for x in api_client.get("networks/", verify=False).json().get("results")]
+    tables = [x["name"] for x in api_client.get("tables/", verify=False).json().get("results")]
 
     # Filter names to ones we want to remove (like the volume)
     networks = list(filter(lambda x: volume in x, networks))
