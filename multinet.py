@@ -131,7 +131,7 @@ def main():
                 "Directional": "boolean",
                 "#ofChildren": "number",
                 "_from": "edge source",
-                "_to": "edge to",
+                "_to": "edge target",
             },
             "quotechar": '"',
             "delimiter": ',',
