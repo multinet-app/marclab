@@ -109,6 +109,8 @@ def main():
                 "MaxZ": "number",
                 "StructureType": "category",
             },
+            "quotechar": '"',
+            "delimiter": ',',
         },
     )
     raise_for_status(r)
@@ -128,6 +130,8 @@ def main():
                 "Directional": "boolean",
                 "#ofChildren": "number",
             },
+            "quotechar": '"',
+            "delimiter": ',',
         },
     )
     raise_for_status(r)
